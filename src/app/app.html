@@ -1,0 +1,315 @@
+<div class="app-layout">
+  
+  <!-- TOAST NOTIFICATION -->
+  @if (toast()) {
+    <div class="toast-container" [class]="'toast-' + toast()!.tipo">
+      <div class="toast-icon">
+        @if (toast()!.tipo === 'sucesso') { <span>✓</span> }
+        @if (toast()!.tipo === 'erro') { <span>✕</span> }
+        @if (toast()!.tipo === 'info') { <span>ℹ</span> }
+      </div>
+      <div class="toast-message">{{ toast()!.mensagem }}</div>
+    </div>
+  }
+
+  <!-- HEADER -->
+  <header class="navbar">
+    <div class="navbar-container">
+      <div class="brand">
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>TaskFlow <span class="badge-version">v2.0</span></h1>
+          <p class="brand-sub">PostgreSQL • Spring Boot • Angular</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="db-pill">
+          <span class="live-dot"></span>
+          <span>PostgreSQL 18</span>
+        </div>
+
+        <button class="btn-primary" (click)="abrirModalCriar()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Nova Tarefa
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="content-container">
+
+    <!-- METRICS DASHBOARD -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Total de Tarefas</span>
+          <span class="metric-icon total">📋</span>
+        </div>
+        <div class="metric-value">{{ totalTarefas() }}</div>
+        <div class="metric-footer">Registradas no banco</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Pendentes</span>
+          <span class="metric-icon pending">⏳</span>
+        </div>
+        <div class="metric-value">{{ tarefasPendentes() }}</div>
+        <div class="metric-footer">Aguardando início</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-title">Em Andamento</span>
+          <span class="metric-icon progress">⚡</span>
+        </div>
+        <div class="metric-value">{{ tarefasEmAndamento() }}</div>
+        <div class="metric-footer">Em desenvolvimento</div>
+      </div>
+
+      <div class="metric-card highlight">
+        <div class="metric-header">
+          <span class="metric-title">Concluídas</span>
+          <span class="metric-icon done">✨</span>
+        </div>
+        <div class="metric-value">{{ tarefasConcluidas() }}</div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" [style.width.%]="progressoConclusao()"></div>
+        </div>
+        <div class="metric-footer">{{ progressoConclusao() }}% de conclusão</div>
+      </div>
+    </section>
+
+    <!-- FILTER & SEARCH BAR -->
+    <section class="toolbar">
+      <div class="search-box">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input 
+          type="text" 
+          placeholder="Buscar tarefas por título ou descrição..." 
+          [value]="termoBusca()" 
+          (input)="termoBusca.set($any($event.target).value)"
+        />
+        @if (termoBusca()) {
+          <button class="btn-clear" (click)="termoBusca.set('')">✕</button>
+        }
+      </div>
+
+      <div class="filter-group">
+        <!-- Status Filters -->
+        <div class="tab-filters">
+          <button 
+            class="tab-btn" 
+            [class.active]="filtroStatus() === 'TODAS'" 
+            (click)="filtroStatus.set('TODAS')"
+          >
+            Todas <span class="tab-count">{{ totalTarefas() }}</span>
+          </button>
+
+          <button 
+            class="tab-btn" 
+            [class.active]="filtroStatus() === 'PENDENTE'" 
+            (click)="filtroStatus.set('PENDENTE')"
+          >
+            Pendentes <span class="tab-count">{{ tarefasPendentes() }}</span>
+          </button>
+
+          <button 
+            class="tab-btn" 
+            [class.active]="filtroStatus() === 'EM_ANDAMENTO'" 
+            (click)="filtroStatus.set('EM_ANDAMENTO')"
+          >
+            Andamento <span class="tab-count">{{ tarefasEmAndamento() }}</span>
+          </button>
+
+          <button 
+            class="tab-btn" 
+            [class.active]="filtroStatus() === 'CONCLUIDA'" 
+            (click)="filtroStatus.set('CONCLUIDA')"
+          >
+            Concluídas <span class="tab-count">{{ tarefasConcluidas() }}</span>
+          </button>
+        </div>
+
+        <!-- Priority Selector -->
+        <select 
+          class="select-priority" 
+          [value]="filtroPrioridade()" 
+          (change)="filtroPrioridade.set($any($event.target).value)"
+        >
+          <option value="TODAS">Todas Prioridades</option>
+          <option value="ALTA">Alta Prioridade</option>
+          <option value="MEDIA">Média Prioridade</option>
+          <option value="BAIXA">Baixa Prioridade</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- TASK LIST / GRID -->
+    <section class="task-section">
+      @if (carregando()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Carregando tarefas do PostgreSQL...</p>
+        </div>
+      } @else if (tarefasFiltradas().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <h3>Nenhuma tarefa encontrada</h3>
+          <p>Tente ajustar os filtros ou adicione uma nova tarefa para começar.</p>
+          <button class="btn-secondary" (click)="abrirModalCriar()">Criar Tarefa</button>
+        </div>
+      } @else {
+        <div class="task-grid">
+          @for (tarefa of tarefasFiltradas(); track tarefa.id) {
+            <article class="task-card" [class.completed]="tarefa.status === 'CONCLUIDA'">
+              <div class="task-card-header">
+                
+                <!-- Status Toggle Button -->
+                <button 
+                  class="status-toggle" 
+                  [class]="'status-' + tarefa.status.toLowerCase()"
+                  (click)="alternarStatus(tarefa)"
+                  title="Clique para alternar o status"
+                >
+                  <span class="status-indicator"></span>
+                  <span class="status-label">
+                    @if (tarefa.status === 'PENDENTE') { Pendente }
+                    @if (tarefa.status === 'EM_ANDAMENTO') { Em Andamento }
+                    @if (tarefa.status === 'CONCLUIDA') { Concluída ✓ }
+                  </span>
+                </button>
+
+                <!-- Priority Badge -->
+                <span class="priority-badge" [class]="'priority-' + tarefa.prioridade.toLowerCase()">
+                  {{ tarefa.prioridade }}
+                </span>
+              </div>
+
+              <!-- Task Content -->
+              <div class="task-body">
+                <h3 class="task-title">{{ tarefa.titulo }}</h3>
+                @if (tarefa.descricao) {
+                  <p class="task-desc">{{ tarefa.descricao }}</p>
+                }
+              </div>
+
+              <!-- Task Footer -->
+              <div class="task-footer">
+                <div class="task-meta">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span>{{ formatarData(tarefa.dataCriacao) }}</span>
+                </div>
+
+                <div class="task-actions">
+                  <button class="btn-action edit" (click)="abrirModalEditar(tarefa)" title="Editar">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
+
+                  <button class="btn-action delete" (click)="deletarTarefa(tarefa.id)" title="Excluir">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  </main>
+
+  <!-- MODAL CRIAR / EDITAR TAREFA -->
+  @if (modalAberto()) {
+    <div class="modal-backdrop" (click)="fecharModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>{{ modoEdicao() ? '✏️ Editar Tarefa' : '➕ Nova Tarefa' }}</h2>
+          <button class="btn-close" (click)="fecharModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Título da Tarefa *</label>
+            <input 
+              type="text" 
+              placeholder="Ex: Implementar autenticação JWT" 
+              [value]="formTitulo()" 
+              (input)="formTitulo.set($any($event.target).value)"
+              autofocus
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Descrição</label>
+            <textarea 
+              rows="3" 
+              placeholder="Detalhes, requisitos ou anotações adicionais..."
+              [value]="formDescricao()"
+              (input)="formDescricao.set($any($event.target).value)"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Prioridade</label>
+            <div class="priority-selector">
+              <button 
+                type="button" 
+                class="priority-opt low" 
+                [class.selected]="formPrioridade() === 'BAIXA'"
+                (click)="formPrioridade.set('BAIXA')"
+              >
+                ● Baixa
+              </button>
+
+              <button 
+                type="button" 
+                class="priority-opt med" 
+                [class.selected]="formPrioridade() === 'MEDIA'"
+                (click)="formPrioridade.set('MEDIA')"
+              >
+                ● Média
+              </button>
+
+              <button 
+                type="button" 
+                class="priority-opt high" 
+                [class.selected]="formPrioridade() === 'ALTA'"
+                (click)="formPrioridade.set('ALTA')"
+              >
+                ● Alta
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancel" (click)="fecharModal()">Cancelar</button>
+          <button class="btn-save" (click)="salvarTarefa()">
+            {{ modoEdicao() ? 'Salvar Alterações' : 'Criar Tarefa' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
