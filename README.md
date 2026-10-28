@@ -2,9 +2,6 @@
 
 Interface web moderna, limpa e de alta performance desenvolvida com **Angular 22**, utilizando **Signals reativos** e arquitetura de componentes standalone em **Dark Mode**.
 
-> 🤖 **Nota de Transparência & Engenharia de IA:**  
-> Este projeto foi concebido e arquitetado por **Matheus Sousa** em colaboração e pair-programming assistido pela inteligência artificial **Antigravity (Google DeepMind)**, explorando as capacidades mais recentes do Angular (Signals e Standalone Components) para máxima velocidade de renderização.
-
 ---
 
 ## 🎨 Destaques Visuais & Funcionalidades
