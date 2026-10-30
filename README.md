@@ -61,4 +61,4 @@ Caso o backend esteja temporariamente offline, o frontend conta com fallback rea
 ---
 
 ## 👤 Autor
-Desenvolvido por **Matheus Sousa** ([@MatheusSousaa](https://github.com/MatheusSousaa)) com assistência de IA.
+Desenvolvido por **Matheus Sousa** ([@MatheusSousaa](https://github.com/MatheusSousaa))
